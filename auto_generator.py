@@ -1,5 +1,6 @@
 import os
 import sqlite3
+import random
 from datetime import datetime
 
 DB = "seo.db"
@@ -14,7 +15,7 @@ AFFILIATE_LINKS = [
 ]
 
 # ----------------------------
-# DB CONNECT
+# DB CONNECTION
 # ----------------------------
 def get_db():
     conn = sqlite3.connect(DB)
@@ -22,16 +23,17 @@ def get_db():
     return conn
 
 # ----------------------------
-# GET BUILD OPPORTUNITIES
+# GET SEO OPPORTUNITIES
 # ----------------------------
 def get_build_keywords():
+
     conn = get_db()
     cur = conn.cursor()
 
     cur.execute("""
-        SELECT keyword, impressions, ctr, position
+        SELECT keyword, impressions, clicks, ctr, position
         FROM queries
-        WHERE impressions > 50
+        WHERE impressions > 20
     """)
 
     rows = cur.fetchall()
@@ -40,72 +42,83 @@ def get_build_keywords():
     keywords = []
 
     for r in rows:
+
         score = 0
 
+        # Strong intent signals
         if r["impressions"] > 100:
             score += 2
+
         if r["position"] > 10:
             score += 3
+
         if r["ctr"] < 2:
             score += 2
 
+        # Only build if meaningful opportunity
         if score >= 4:
             keywords.append(r["keyword"])
 
+    # remove duplicates
     return list(set(keywords))
 
 # ----------------------------
 # CHECK IF PAGE EXISTS
 # ----------------------------
 def page_exists(keyword):
-    filename = f"{OUTPUT_DIR}/{keyword.replace(' ', '-')}.html"
-    return os.path.exists(filename)
+    slug = keyword.replace(" ", "-").lower()
+    return os.path.exists(f"{OUTPUT_DIR}/{slug}.html")
 
 # ----------------------------
-# AFFILIATE PICKER
+# PICK AFFILIATE LINK
 # ----------------------------
-def get_affiliate():
-    import random
+def get_affiliate_link():
     return random.choice(AFFILIATE_LINKS)
 
 # ----------------------------
-# PAGE TEMPLATE GENERATOR
+# GENERATE HTML PAGE
 # ----------------------------
 def build_page(keyword):
 
-    affiliate = get_affiliate()
-    slug = keyword.replace(" ", "-")
+    slug = keyword.replace(" ", "-").lower()
+    affiliate = get_affiliate_link()
 
     html = f"""
+    <!DOCTYPE html>
     <html>
     <head>
-        <title>{keyword} - Guide</title>
-        <meta name="description" content="Learn about {keyword} and how to use automation tools effectively.">
+        <title>{keyword}</title>
+        <meta name="description" content="Learn about {keyword} and automation strategies.">
     </head>
-    <body style="font-family:Arial;max-width:800px;margin:auto;">
+
+    <body style="font-family:Arial;max-width:900px;margin:auto;padding:20px;">
 
         <h1>{keyword}</h1>
 
         <p>
-        This guide explains everything about <strong>{keyword}</strong> and how businesses use automation tools to improve results.
+            This page explains <strong>{keyword}</strong> and how businesses use automation tools to improve engagement and results.
         </p>
 
-        <h2>Why it matters</h2>
+        <h2>Why this matters</h2>
         <p>
-        Automation is becoming essential for scaling communication, engagement, and lead generation.
+            Understanding {keyword} helps improve marketing efficiency, automation workflows, and customer engagement.
         </p>
 
-        <h2>Recommended tool</h2>
+        <h2>Recommended Tool</h2>
         <p>
-        Many businesses use automation platforms to handle messaging and workflows.
+            Many businesses use automation platforms to manage messaging, workflows, and conversions.
         </p>
 
-        <a href="{affiliate}" target="_blank" rel="nofollow sponsored">
+        <a href="{affiliate}" target="_blank" rel="nofollow sponsored"
+           style="display:inline-block;margin-top:20px;padding:10px 15px;background:#2563eb;color:white;text-decoration:none;border-radius:6px;">
             Try Automation Tool
         </a>
 
         <hr>
-        <small>Generated: {datetime.now()}</small>
+
+        <small>
+            Generated on {datetime.now().strftime("%Y-%m-%d %H:%M:%S")}
+        </small>
 
     </body>
     </html>
@@ -129,22 +142,34 @@ def save_page(slug, html):
     print(f"[CREATED] {path}")
 
 # ----------------------------
-# MAIN RUNNER
+# MAIN ENGINE
 # ----------------------------
 def run():
 
+    print("🚀 SEO GENERATOR STARTED")
+
     keywords = get_build_keywords()
 
-    print(f"Found {len(keywords)} build opportunities")
+    print(f"📊 Opportunities found: {len(keywords)}")
+
+    created = 0
+    skipped = 0
 
     for kw in keywords:
 
         if page_exists(kw):
-            print(f"[SKIP] already exists: {kw}")
+            print(f"[SKIP] exists: {kw}")
+            skipped += 1
             continue
 
         slug, html = build_page(kw)
         save_page(slug, html)
+
+        print(f"[CREATED] {kw}")
+        created += 1
+
+    print("------------------------------------------------")
+    print(f"DONE | CREATED: {created} | SKIPPED: {skipped}")
 
 # ----------------------------
 # EXECUTE
