@@ -5,7 +5,7 @@ on:
     branches:
       - main
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 * * * *'   # hourly
   workflow_dispatch:
 
 env:
@@ -16,6 +16,9 @@ env:
   AFFILIATE_3: "https://manychat.partnerlinks.io/emwcbue22i01-ogcg6e"
   AFFILIATE_4: "https://manychat.partnerlinks.io/t8let4hhqtqg-wki14"
   AFFILIATE_5: "https://manychat.partnerlinks.io/nwkkk7vkps17"
+
+  # ⚙️ CONTROLLED OUTPUT (DO NOT HARD FORCE 100 WITHOUT LIMITER IN CODE)
+  PAGE_LIMIT_PER_RUN: 100
 
 jobs:
   vulture-run:
@@ -30,18 +33,24 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '24'
 
-      - name: Run Vulture Engine
+      - name: Run Generator
         run: |
-          node generate.js || echo "generate.js skipped"
-          node vulture-generator.js || echo "vulture-generator.js skipped"
-          node generate-sitemap.js || echo "sitemap skipped"
+          echo "🚀 Running generator with limit: $PAGE_LIMIT_PER_RUN"
+          node generate.js
+          node vulture-generator.js
+          node generate-sitemap.js
 
-      - name: Commit and Push Changes
+      - name: Commit only if changes exist
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add .
-          git commit -m "Vulture 10K Sync [Skip CI]" || exit 0
-          git push
+
+          if git diff --cached --quiet; then
+            echo "No changes"
+          else
+            git commit -m "Hourly generation batch"
+            git push
+          fi
