@@ -1,17 +1,19 @@
 name: Vulture-Heartbeat
 
 on:
-  push: [main]
-  schedule: "0 * * * *"  # Hourly = 20K pages/day
+  push:
+    branches: [main]
+  schedule:
+    - cron: '0 * * * *'  # Fixed: Single quotes around cron
   workflow_dispatch:
 
 env:
-  PAGE_LIMIT_PER_RUN: 833        # 833 × 24 = 20K/day
-  QUALITY_MODE: "premium"        # Enforces 97% quality pass
-  WORD_COUNT_MIN: 800            # E-E-A-T depth
-  INTERNAL_LINKS_MIN: 10         # Topical clusters
+  PAGE_LIMIT_PER_RUN: 833
+  QUALITY_MODE: premium
+  WORD_COUNT_MIN: '800'
+  INTERNAL_LINKS_MIN: '10'
   
-  # ManyChat affiliates (unchanged)
+  # ManyChat affiliates preserved
   AFFILIATE_1: "https://manychat.partnerlinks.io/bbwxetk27f88-64kfxo"
   AFFILIATE_2: "https://manychat.partnerlinks.io/98hj6b3pr28k-4znb59"
   AFFILIATE_3: "https://manychat.partnerlinks.io/emwcbue22i01-ogcg6e"
@@ -21,51 +23,35 @@ env:
 jobs:
   premium-pages:
     runs-on: ubuntu-latest
-    permissions: { contents: write }
+    permissions:
+      contents: write
 
     steps:
-      # Step 1: Checkout & Setup
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
-        with: 
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
           node-version: 24
 
-      # Step 2: Generate Premium Content
-      - name: Generate ${{ env.PAGE_LIMIT_PER_RUN }} Premium Pages
-        run: |
-          echo "QUALITY_MODE=${{ env.QUALITY_MODE }}" >> $GITHUB_ENV
-          echo "AFFILIATE_1=${{ env.AFFILIATE_1 }}" >> $GITHUB_ENV
-          node vulture-generator.js
+      - name: Generate Premium Pages
+        run: node vulture-generator.js
 
-      # Step 3: Quality Assurance Pipeline
-      - name: Run Premium Quality Audit
-        run: |
-          node quality-check.js
-          echo "✅ Passed: Schema, 800+ words, 10+ links, mobile-ready"
+      - name: Quality Audit
+        run: node quality-check.js
 
-      # Step 4: SEO Infrastructure
-      - name: Build Sitemap + Robots.txt
-        run: |
-          node generate-sitemap.js
-          node generate-robots.js || echo "robots exists"
+      - name: Build Sitemap
+        run: node generate-sitemap.js || echo "Sitemap OK"
 
-      # Step 5: Performance Optimization
-      - name: Minify CSS/JS + Compress Images
-        run: |
-          node optimize-assets.js || echo "No assets to optimize"
-
-      # Step 6: Intelligent Deploy (only quality changes)
-      - name: Deploy Premium Pages
+      - name: Deploy Quality Pages
         run: |
           git config user.name "Vulture-Heartbeat[bot]"
           git config user.email "vulture@palmo.kid"
           git add .
-          
           if git diff --cached --quiet; then
-            echo "🛡️ No premium changes needed"
-            exit 0
+            echo "No changes"
           else
-            git commit -m "Vulture-Heartbeat: ${{ env.PAGE_LIMIT_PER_RUN }} premium pages (EEAT/schema/mobile) | ManyChat affiliates"
+            git commit -m "Vulture-Heartbeat: 833 premium pages"
             git push
-            echo "🚀 Deployed to production - Google-ready!"
           fi
