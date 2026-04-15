@@ -1,57 +1,37 @@
 name: Vulture-Heartbeat
-
 on:
   push:
     branches: [main]
   schedule:
-    - cron: '0 * * * *'  # Fixed: Single quotes around cron
+    - cron: '0 * * * *'
   workflow_dispatch:
-
 env:
   PAGE_LIMIT_PER_RUN: 833
-  QUALITY_MODE: premium
-  WORD_COUNT_MIN: '800'
-  INTERNAL_LINKS_MIN: '10'
-  
-  # ManyChat affiliates preserved
   AFFILIATE_1: "https://manychat.partnerlinks.io/bbwxetk27f88-64kfxo"
   AFFILIATE_2: "https://manychat.partnerlinks.io/98hj6b3pr28k-4znb59"
   AFFILIATE_3: "https://manychat.partnerlinks.io/emwcbue22i01-ogcg6e"
   AFFILIATE_4: "https://manychat.partnerlinks.io/t8let4hhqtqg-wki14"
   AFFILIATE_5: "https://manychat.partnerlinks.io/nwkkk7vkps17"
-
 jobs:
-  premium-pages:
+  deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
-
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 24
-
-      - name: Generate Premium Pages
-        run: node vulture-generator.js
-
-      - name: Quality Audit
-        run: node quality-check.js
-
-      - name: Build Sitemap
-        run: node generate-sitemap.js || echo "Sitemap OK"
-
-      - name: Deploy Quality Pages
-        run: |
-          git config user.name "Vulture-Heartbeat[bot]"
+      - run: node vulture-generator.js
+      - run: node quality-check.js
+      - run: node generate-sitemap.js || echo "OK"
+      - run: |
+          git config user.name "Vulture[bot]"
           git config user.email "vulture@palmo.kid"
           git add .
           if git diff --cached --quiet; then
             echo "No changes"
           else
-            git commit -m "Vulture-Heartbeat: 833 premium pages"
+            git commit -m "Vulture: 833 ManyChat pages"
             git push
           fi
