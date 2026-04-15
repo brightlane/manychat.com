@@ -1,0 +1,47 @@
+name: SkyScanner Vulture-Heartbeat
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+
+env:
+  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+
+  AFFILIATE_1: "https://manychat.partnerlinks.io/bbwxetk27f88-64kfxo"
+  AFFILIATE_2: "https://manychat.partnerlinks.io/98hj6b3pr28k-4znb59"
+  AFFILIATE_3: "https://manychat.partnerlinks.io/emwcbue22i01-ogcg6e"
+  AFFILIATE_4: "https://manychat.partnerlinks.io/t8let4hhqtqg-wki14"
+  AFFILIATE_5: "https://manychat.partnerlinks.io/nwkkk7vkps17"
+
+jobs:
+  vulture-run:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run Vulture Engine
+        run: |
+          node generate.js || echo "generate.js skipped"
+          node vulture-generator.js || echo "vulture-generator.js skipped"
+          node generate-sitemap.js || echo "sitemap skipped"
+
+      - name: Commit and Push Changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Vulture 10K Sync [Skip CI]" || exit 0
+          git push
