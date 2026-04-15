@@ -1,15 +1,14 @@
-name: SkyScanner Vulture-Heartbeat
+name: Vulture-Heartbeat
 
 on:
   push:
-    branches:
-      - main
+    branches: [main]
   schedule:
-    - cron: '0 * * * *'   # hourly
+    - cron: "0 * * * *"
   workflow_dispatch:
 
 env:
-  ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION: true
+  PAGE_LIMIT_PER_RUN: 100
 
   AFFILIATE_1: "https://manychat.partnerlinks.io/bbwxetk27f88-64kfxo"
   AFFILIATE_2: "https://manychat.partnerlinks.io/98hj6b3pr28k-4znb59"
@@ -17,40 +16,35 @@ env:
   AFFILIATE_4: "https://manychat.partnerlinks.io/t8let4hhqtqg-wki14"
   AFFILIATE_5: "https://manychat.partnerlinks.io/nwkkk7vkps17"
 
-  # ⚙️ CONTROLLED OUTPUT (DO NOT HARD FORCE 100 WITHOUT LIMITER IN CODE)
-  PAGE_LIMIT_PER_RUN: 100
-
 jobs:
-  vulture-run:
+  build:
     runs-on: ubuntu-latest
     permissions:
       contents: write
 
     steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
 
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          node-version: 24
 
       - name: Run Generator
-        run: |
-          echo "🚀 Running generator with limit: $PAGE_LIMIT_PER_RUN"
-          node generate.js
-          node vulture-generator.js
-          node generate-sitemap.js
+        run: node vulture-generator.js
 
-      - name: Commit only if changes exist
+      - name: Build Sitemap
+        run: node generate-sitemap.js || echo "no sitemap"
+
+      - name: Commit Changes
         run: |
-          git config --global user.name "github-actions[bot]"
-          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
           git add .
 
           if git diff --cached --quiet; then
             echo "No changes"
           else
-            git commit -m "Hourly generation batch"
+            git commit -m "Auto Vulture Run"
             git push
           fi
