@@ -1,0 +1,13 @@
+User-agent: *
+
+# Allow full site crawling (important for SEO ranking)
+Allow: /
+
+# Optional safety blocks (only if these folders exist)
+Disallow: /node_modules/
+Disallow: /scripts/
+Disallow: /.git/
+Disallow: /private/
+
+# 🚀 Sitemap location (CRITICAL FOR GOOGLE INDEXING)
+Sitemap: https://brightlane.github.io/manychat/sitemap.xml
