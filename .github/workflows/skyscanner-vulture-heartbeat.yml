@@ -3,8 +3,14 @@ on:
   push:
     branches: [main]
   schedule:
-    - cron: '0 * * * *'
+    - cron: '0 0 * * *' # Run once a day (Slower/Safer)
   workflow_dispatch:
+
+# ADD THIS SECTION:
+concurrency:
+  group: "pages"
+  cancel-in-progress: false 
+
 env:
   PAGE_LIMIT_PER_RUN: 833
   AFFILIATE_1: "https://manychat.partnerlinks.io/bbwxetk27f88-64kfxo"
@@ -12,6 +18,7 @@ env:
   AFFILIATE_3: "https://manychat.partnerlinks.io/emwcbue22i01-ogcg6e"
   AFFILIATE_4: "https://manychat.partnerlinks.io/t8let4hhqtqg-wki14"
   AFFILIATE_5: "https://manychat.partnerlinks.io/nwkkk7vkps17"
+
 jobs:
   deploy:
     runs-on: ubuntu-latest
@@ -19,19 +26,28 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v4
+      
       - uses: actions/setup-node@v4
         with:
-          node-version: 24
-      - run: node vulture-generator.js
-      - run: node quality-check.js
-      - run: node generate-sitemap.js || echo "OK"
-      - run: |
+          node-version: 20 # Stable LTS
+
+      # Run all generation scripts in one block
+      - name: Generate Content
+        run: |
+          node vulture-generator.js
+          node generate-index.js
+          node generate-sitemap.js
+          node quality-check.js
+
+      # Commit everything at once to prevent multiple triggers
+      - name: Commit and Push
+        run: |
           git config user.name "Vulture[bot]"
           git config user.email "vulture@palmo.kid"
           git add .
           if git diff --cached --quiet; then
-            echo "No changes"
+            echo "No changes to commit"
           else
-            git commit -m "Vulture: 833 ManyChat pages"
+            git commit -m "Vulture Heartbeat: Daily 833 Strategy Sync"
             git push
           fi
