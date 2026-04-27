@@ -3,7 +3,8 @@ name: "ManyChat Vulture 10K Builder"
 on:
   workflow_dispatch:
   schedule:
-    - cron: '0 6 * * *' # Fires at 6:00 AM UTC
+    # Shifted to 6:15 AM UTC to avoid high-traffic "top of the hour" delays
+    - cron: '15 6 * * *' 
 
 permissions:
   contents: write
@@ -11,29 +12,36 @@ permissions:
 jobs:
   vulture-sync:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
     steps:
       - name: 1. Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0 # Essential for the rebase logic to see history
 
       - name: 2. Setup Python
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
-      - name: 3. Build ManyChat Authority Pages
+      - name: 3. Build Descrambled Automation Pages
         run: python article-generator.py
 
-      - name: 4. Conflict-Free Push
+      - name: 4. Heavy-Duty Conflict-Free Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Add .nojekyll to speed up the bot
-          touch .nojekyll
+          # Stage only the pages folder to keep the repo clean
+          git add pages/*.html
           
-          git add .
-          git commit -m "Vulture Sync: ManyChat Authority Hub" || echo "No changes"
+          # Commit with timestamp for tracking
+          git commit -m "ManyChat Vulture Sync: $(date +'%Y-%m-%d %H:%M')" || echo "No changes"
           
+          # Sync with remote to prevent "cannot lock ref" and "rejected" errors
           git fetch origin main
           git rebase origin/main
+          
+          # Push with fallback rebase for maximum reliability
           git push origin main || (git pull --rebase origin main && git push origin main)
