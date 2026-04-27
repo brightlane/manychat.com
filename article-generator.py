@@ -2,19 +2,24 @@ import os
 import random
 
 def generate_vulture_page(page_id, total_pages=833):
-    # 1. Generate 5 random internal links to prevent "Orphan Pages"
-    related_links = ""
-    for _ in range(5):
+    # 1. Generate 5 unique random internal links to prevent "Orphan Pages"
+    # Using a set ensures we don't link to the same page twice on one page
+    related_ids = set()
+    while len(related_ids) < 5:
         r_id = random.randint(1, total_pages)
         if r_id != page_id:
-            related_links += f'<li><a href="vulture-page-{r_id}.html">ManyChat Strategy #{r_id}</a></li>'
+            related_ids.add(r_id)
+
+    related_links = ""
+    for r_id in related_ids:
+        related_links += f'<li><a href="vulture-page-{r_id}.html">ManyChat Strategy #{r_id}</a></li>'
 
     # 2. The HTML Template with FAQ Schema and Sticky CTA
-    html_content = f"""
-<!DOCTYPE html>
+    html_content = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ManyChat Automation Strategy #{page_id}</title>
     
     <script type="application/ld+json">
@@ -40,14 +45,18 @@ def generate_vulture_page(page_id, total_pages=833):
     </script>
 
     <style>
-        body {{ font-family: sans-serif; line-height: 1.6; padding: 40px; max-width: 800px; margin: auto; }}
-        .related-box {{ background: #f4f4f4; padding: 20px; border-radius: 10px; margin-top: 40px; }}
-        .sticky-cta {{ position: fixed; bottom: 20px; right: 20px; background: #007bff; color: white; padding: 15px 25px; border-radius: 50px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); }}
+        body {{ font-family: sans-serif; line-height: 1.6; padding: 40px; max-width: 800px; margin: auto; color: #333; }}
+        .related-box {{ background: #f4f4f4; padding: 20px; border-radius: 10px; margin-top: 40px; border: 1px solid #ddd; }}
+        .sticky-cta {{ position: fixed; bottom: 20px; right: 20px; background: #007bff; color: white; padding: 15px 25px; border-radius: 50px; text-decoration: none; font-weight: bold; box-shadow: 0 4px 15px rgba(0,0,0,0.2); transition: transform 0.2s; }}
+        .sticky-cta:hover {{ transform: scale(1.05); background: #0056b3; }}
+        h1 {{ color: #007bff; }}
     </style>
 </head>
 <body>
     <h1>ManyChat Automation Guide #{page_id}</h1>
-    <p>This automated flow is designed to scale your Instagram and Messenger outreach...</p>
+    <p>This automated flow is designed to scale your Instagram and Messenger outreach. By implementing <strong>Strategy #{page_id}</strong>, you can automate lead qualification and ensure no prospect falls through the cracks.</p>
+    
+    <p>Using ManyChat's visual flow builder, you can map out customer journeys that trigger based on keywords, comments, or Story mentions.</p>
 
     <div class="related-box">
         <h3>Explore More ManyChat Solutions</h3>
@@ -56,15 +65,22 @@ def generate_vulture_page(page_id, total_pages=833):
 
     <a href="https://manychat.com/pricing" class="sticky-cta">🚀 Get ManyChat Pro</a>
 </body>
-</html>
-"""
+</html>"""
+
     # Save the file into the pages directory
-    with open(f"pages/vulture-page-{page_id}.html", "w") as f:
+    file_path = os.path.join('pages', f"vulture-page-{page_id}.html")
+    with open(file_path, "w", encoding="utf-8") as f:
         f.write(html_content)
 
 # Run the factory
 if __name__ == "__main__":
-    if not os.path.exists('pages'): os.makedirs('pages')
+    # Create the folder if it doesn't exist
+    if not os.path.exists('pages'): 
+        os.makedirs('pages')
+    
+    print(f"Generating 833 pages...")
+    
     for i in range(1, 834):
         generate_vulture_page(i)
+        
     print("Vulture Sync Complete: 833 Pages Refactored.")
